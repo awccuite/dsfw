@@ -5,10 +5,10 @@
 namespace gxe {
 
 const uint32_t INITIAL_ENTITY_LIMIT = INITIAL_SPARSE_SET_CAPACITY; // Set an initial entity limit of 1024 entities.
-const entityid INITIIAL_ENTITY_ID = 0;
+const entityid INITIAL_ENTITY_ID = 0;
 
 idManager::idManager() : _numEntities(0) {
-    allocateEntities(INITIIAL_ENTITY_ID);
+    allocateEntities(INITIAL_ENTITY_ID);
 }
 
 entityid idManager::createEntity(){
@@ -35,8 +35,11 @@ void idManager::allocateEntities(entityid startId){
     entityid endId = startId + INITIAL_ENTITY_LIMIT;
     _availableIds.reserve(_availableIds.size() + INITIAL_ENTITY_LIMIT);
 
-    for(entityid i = endId; i > startId; i--){
+    for(entityid i = endId - 1; i >= startId; i--){
         _availableIds.emplace_back(i);
+        [[unlikely]] if(i == 0){
+            break;
+        }
     }
 }
 

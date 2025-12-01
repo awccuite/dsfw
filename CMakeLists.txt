@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 
+if(APPLE)
+    set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm/bin/clang++")
+    set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm/bin/clang")
+endif()
+
 project (ds_ecs)
 
 set(CMAKE_CXX_STANDARD 23)

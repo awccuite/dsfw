@@ -1,9 +1,11 @@
 #include <iostream>
 
-#include "ecs/ecs.h"
+#include "ecs/world.hpp"
 
 int main(){
     std::cout << "Hello World" << std::endl;
+
+    gxe::World world1;
 
     return 0;
 }
