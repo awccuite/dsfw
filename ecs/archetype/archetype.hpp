@@ -3,9 +3,9 @@
 #include <unordered_map>
 #include <vector>
 
-namespace gxe {
+#include "../types.hpp"
 
-typedef size_t ComponentID;
+namespace gxe {
 
 // An archetype is a collection of components, that are related in that each of the
 // entities that own one component in the archetype own one of every
@@ -13,21 +13,19 @@ typedef size_t ComponentID;
 
 // Each archetype maintains a vector for each of its underlying components.
 
-class Archetype {
+class archetype {
 public:
-    Archetype() = default;
-    ~Archetype() = default;
+    archetype() = default;
+    ~archetype() = default;
 
 private:
     // Map from componentID to the components index in our collection
     // Type erased container around a component.
-    struct ComponentWrapper {
-    
-    
+    struct component_wrapper {
+        
     };
 
-    std::unordered_map<ComponentID, size_t> _componentMap;
-    
+    std::unordered_map<component_id, size_t> _componentMap; // Map from componentid to their index in this specific archetype collection
 };
 
 }; // namespace gxe

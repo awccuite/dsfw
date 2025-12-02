@@ -17,7 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(SOURCE_FILES
     main.cpp
 
-    ecs/idManager.cpp
+    ecs/id_manager.cpp
 )
 
 find_package(raylib REQUIRED)

@@ -15,14 +15,14 @@
 
 namespace gxe {
 
-class SystemBase {
+class system_base {
 public:
-    SystemBase(uint32_t tickrate):
+    system_base(uint32_t tickrate):
         _tickrate(tickrate),
         _accumulatedTime(0.0f),
         _secsPerTick(tickrate > 0 ? 1.0f / tickrate : 0.0f) {};
 
-    virtual ~SystemBase() = default;
+    virtual ~system_base() = default;
 
     // Virtual update for polymorphic calls through base pointer
     void update(float dt) {
@@ -57,19 +57,19 @@ protected:
 //       void tick(float dt) { /* custom logic using _ecs */ }
 //   };
 template <typename Derived, typename ECS>
-class SystemCRTP : public SystemBase {
+class SystemCRTP : public system_base {
 public:
     SystemCRTP(ECS& world, uint32_t tickrate = 0) // Default of update as frequently as possible
-        : SystemBase(tickrate), _world(world) {}
+        : system_base(tickrate), _world(world) {}
 
 protected:
     ECS& _world; // Reference to the world with which this system operates in
 };
 
 // Lambda-based system for quick inline definitions (original behavior)
-class LambdaSystem : public SystemBase {
+class LambdaSystem : public system_base {
 public:
-    LambdaSystem(uint32_t tickrate) : SystemBase(tickrate) {};
+    LambdaSystem(uint32_t tickrate) : system_base(tickrate) {};
     ~LambdaSystem() = default;
 
     // Set tick to some function F.

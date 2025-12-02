@@ -5,7 +5,7 @@
 int main(){
     std::cout << "Hello World" << std::endl;
 
-    gxe::World world1;
+    gxe::world world1;
 
     return 0;
 }

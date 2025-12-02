@@ -17,33 +17,27 @@ namespace gxe {
 // n! archetypes from components.
 
 // Maintain a counter for component to id mapping.
-class ArchetypeManager {
+class archetype_manager {
 public:
     template<typename Component>
-    static ComponentID getComponentID(){
-        static ComponentID id = _idCounter++; // Static inside a template function is instantiated once per type
+    static component_id getComponentID(){
+        static component_id id = _idCounter++; // Static inside a template function is instantiated once per type
         return id;
     }
 
     // Should typically be handled in the init phase of a project, so not too worried about the RTTI cost.
     template<typename C>
-    bool registerComponent(){
-        static bool registered = false; // Static per type registration check
-        if(registered){
-            std::cout << "Failed to register component, already member" << std::endl;
-            return false;
-        }
-
-        ComponentID id = getComponentID<C>();
+    uint32_t registerComponent(){
+        component_id id = getComponentID<C>();
         _componentNames[id] = typeid(C).name();
-        registered = true;
-        return true;
+
+        return id;
     }
 
 private:
 
-    static inline std::unordered_map<ComponentID, std::string> _componentNames;
-    static inline std::atomic<ComponentID> _idCounter;
+    static inline std::unordered_map<component_id, std::string> _componentNames;
+    static inline std::atomic<component_id> _idCounter;
 };
 
 }; // namespace gxe
