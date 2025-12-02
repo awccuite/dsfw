@@ -3,7 +3,7 @@
 #include "id_manager.hpp"
 
 #include "archetype/archetype_man.hpp"
-#include "systems/system.hpp"
+#include "systems/system_manager.hpp"
 
 #include <any>
 
@@ -51,7 +51,7 @@ public:
         [[maybe_unused]] world& _world;
         entity_id _id;
         std::unordered_map<component_id, std::any> _componentData;
-        
+
     }; // END ENTITY BUILDER
 
     // Creturn an entity_builder with an id managed by the _idManager
