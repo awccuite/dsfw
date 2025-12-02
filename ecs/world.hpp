@@ -1,8 +1,9 @@
 #pragma once
 
-#include "system.hpp"
 #include "id_manager.hpp"
+
 #include "archetype/archetype_man.hpp"
+#include "systems/system.hpp"
 
 #include <any>
 
@@ -15,7 +16,7 @@ public:
         return _archetypes.registerComponent<C>();
     }
 
-    // Builder as a nested class with access to world
+    // ENTITY BUILDER
     class entity_builder {
     public:
         entity_builder(world& w, entity_id id) : _world(w), _id(id) {}
@@ -33,17 +34,25 @@ public:
             // Build the signature from the component ID's.
             // Check if it exists, or we need a new archetype.
             // Add the relevant components at the correct location in the archetype.
+            
+            archetype::signature sig{};
+            for(const auto& [comp_id, _] : _componentData){
+                sig.insert(comp_id);
+            }
 
+            // Get or create the archetype (Archetype manager)
+            // Add the entity to it, and move all the components into the archetype.
+            // Create our entity record.
 
             return _id;
         }
 
     private:
-        world& _world;
+        [[maybe_unused]] world& _world;
         entity_id _id;
         std::unordered_map<component_id, std::any> _componentData;
-        // You may also need storage for component data
-    };
+        
+    }; // END ENTITY BUILDER
 
     // Creturn an entity_builder with an id managed by the _idManager
     entity_builder create_entity() {
@@ -65,7 +74,7 @@ private:
 
     std::vector<std::unique_ptr<system_base>> _systems;
 
-    bool _initialized = false;
+    [[maybe_unused]] bool _initialized = false;
 };
 
 }; // namespace gxe
