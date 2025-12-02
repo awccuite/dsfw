@@ -23,8 +23,6 @@ public:
         // Add a component to our entity builder.
         template<typename C, typename ...Args>
         entity_builder& add_component(Args&&... args) {
-            // Store component data and ID for later construction
-            // Build the component
             component_id id = archetype_manager::getComponentID<C>();
             _componentData[id] = std::make_any<C>(std::forward<Args>(args)...); // Create our component data
 
@@ -32,7 +30,11 @@ public:
         }
 
         entity_id build() {
-            // Finalize: find/create archetype, insert entity in its archetype
+            // Build the signature from the component ID's.
+            // Check if it exists, or we need a new archetype.
+            // Add the relevant components at the correct location in the archetype.
+
+
             return _id;
         }
 
