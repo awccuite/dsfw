@@ -14,14 +14,14 @@ using component_factory = std::function<std::unique_ptr<archetype::component_arr
 
 public:
     template<typename Component>
-    static component_id getComponentID(){
+    static component_id get_component_id(){
         static component_id id = _idCounter++; // Static inside a template function is instantiated once per type
         return id;
     }
  
     template<typename C>
-    uint32_t registerComponent(){
-        component_id id = getComponentID<C>();
+    uint32_t register_component(){
+        component_id id = get_component_id<C>();
         _componentNames[id] = typeid(C).name();
         
         // Static per C method for creating a component array for said method

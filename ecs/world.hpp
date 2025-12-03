@@ -31,8 +31,13 @@ public:
 
     // Register a factory method for building component_array<C>
     template<typename C>
-    component_id registerComponent(){ // Wrapper around the Archetype manager component call
-        return _archetypes.registerComponent<C>();
+    component_id register_component(){ // Wrapper around the Archetype manager component call
+        return _archetypes.register_component<C>();
+    }
+
+    template<typename C>
+    component_id get_component_id(){
+        return archetype_manager::get_component_id<C>();
     }
 
     // ENTITY BUILDER
@@ -43,7 +48,7 @@ public:
         // Add a component to our entity builder.
         template<typename C, typename ...Args>
         entity_builder& add_component(Args&&... args) {
-            component_id id = archetype_manager::getComponentID<C>();
+            component_id id = archetype_manager::get_component_id<C>();
             _componentData[id] = std::make_any<C>(std::forward<Args>(args)...); // Create our component data
 
             return *this;
@@ -54,6 +59,7 @@ public:
             // Check if it exists, or we need a new archetype.
             // Add the relevant components at the correct location in the archetype.
             
+            // TODO: Move signature creation method from _componentData to archetypeManager, so that the signature creation logic is maintained by an archetype class.
             archetype::signature sig{};
             for(const auto& [comp_id, _] : _componentData){
                 sig.insert(comp_id);
