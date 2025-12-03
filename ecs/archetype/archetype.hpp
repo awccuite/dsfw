@@ -111,6 +111,10 @@ public:
             _data.push_back(std::move(component));
         }
         
+        void push_back(std::any&& component) override {
+            _data.push_back(std::move(std::any_cast<C&>(component)));
+        }
+        
         // Swap and pop
         void remove(size_t index) override {
             if (index < _data.size() - 1) {

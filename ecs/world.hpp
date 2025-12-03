@@ -62,7 +62,7 @@ public:
             // Get or create the archetype (Archetype manager)
             // Add the entity to it, and move all the components into the archetype.
             // Create our entity record.
-            auto& archetype = _world._archetypes.get_or_create_archetype(sig);
+            [[maybe_unused]] auto& archetype = _world._archetypes.get_or_create_archetype(sig);
 
             // Now, create our entity, place its components in the archetype, and store it's record and data.
 

@@ -48,12 +48,19 @@ private:
         wrapper._signature = signature;
         wrapper._data = std::make_unique<archetype>();
 
-        // For each id in the signature, create our array and move it into _data.
         for(const component_id& id : signature.components()){
-            wrapper._data->insert_component_array(id, _componentFactories[id]());
+            auto it = _componentFactories.find(id);
+            if(it == _componentFactories.end()){
+                throw std::runtime_error("Component not registered: " + std::to_string(id));
+            }
+            wrapper._data->insert_component_array(id, it->second());
         }
         
-        return *(wrapper._data); // Return a reference to our archetype.
+        size_t index = _archetypes.size();
+        _archetypes.push_back(std::move(wrapper));
+        _archetypeMap[signature] = index;
+        
+        return *(_archetypes[index]._data);
     }
 
     struct archetype_wrapper {
