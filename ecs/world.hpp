@@ -10,7 +10,26 @@
 namespace gxe {
 
 class world {
+private:
+    struct entity_record {
+        archetype_id localId = NULL_ARCHETYPE_ID; // Default invalid values
+        archetype_id archetypeIndex = NULL_ARCHETYPE_ID;
+
+        entity_record(size_t local, archetype_id archId) : localId(local), archetypeIndex(archId) {};
+
+        bool is_active() const { return archetypeIndex != NULL_ARCHETYPE_ID && localId != NULL_ARCHETYPE_ID; };
+    };
+
+    id_manager _idManager;
+    archetype_manager _archetypes;
+
+    std::vector<std::unique_ptr<system_base>> _systems;
+
+    [[maybe_unused]] bool _initialized = false;
+
 public:
+
+    // Register a factory method for building component_array<C>
     template<typename C>
     component_id registerComponent(){ // Wrapper around the Archetype manager component call
         return _archetypes.registerComponent<C>();
@@ -43,6 +62,9 @@ public:
             // Get or create the archetype (Archetype manager)
             // Add the entity to it, and move all the components into the archetype.
             // Create our entity record.
+            auto& archetype = _world._archetypes.get_or_create_archetype(sig);
+
+            // Now, create our entity, place its components in the archetype, and store it's record and data.
 
             return _id;
         }
@@ -58,23 +80,6 @@ public:
     entity_builder create_entity() {
         return entity_builder(*this, _idManager.create_entity());
     };
-
-private:
-    struct entity_record {
-        archetype_id localId = NULL_ARCHETYPE_ID; // Default invalid values
-        archetype_id archetypeIndex = NULL_ARCHETYPE_ID;
-
-        entity_record(size_t local, archetype_id archId) : localId(local), archetypeIndex(archId) {};
-
-        bool is_active() const { return archetypeIndex != NULL_ARCHETYPE_ID && localId != NULL_ARCHETYPE_ID; };
-    };
-
-    id_manager _idManager;
-    archetype_manager _archetypes;
-
-    std::vector<std::unique_ptr<system_base>> _systems;
-
-    [[maybe_unused]] bool _initialized = false;
 };
 
 }; // namespace gxe
