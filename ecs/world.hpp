@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ecs/types.hpp"
 #include "id_manager.hpp"
 
 #include "archetype/archetype_man.hpp"
@@ -11,15 +12,6 @@ namespace gxe {
 
 class world {
 private:
-    struct entity_record {
-        archetype_id localId = NULL_ARCHETYPE_ID; // Default invalid values
-        archetype_id archetypeIndex = NULL_ARCHETYPE_ID;
-
-        entity_record(size_t local, archetype_id archId) : localId(local), archetypeIndex(archId) {};
-
-        bool is_active() const { return archetypeIndex != NULL_ARCHETYPE_ID && localId != NULL_ARCHETYPE_ID; };
-    };
-
     id_manager _idManager;
     archetype_manager _archetypes;
 
@@ -28,6 +20,14 @@ private:
     [[maybe_unused]] bool _initialized = false;
 
 public:
+    struct entity_record {
+        archetype_id global_id = NULL_ARCHETYPE_ID; // Global entity ID
+        archetype_id arch_index = NULL_ARCHETYPE_ID; // Index in archetype.
+
+        entity_record(size_t global, archetype_id arch_idx) : global_id(global), arch_index(arch_idx) {};
+
+        bool is_active() const { return arch_index != NULL_ARCHETYPE_ID && global_id != NULL_ARCHETYPE_ID; };
+    };
 
     // Register a factory method for building component_array<C>
     template<typename C>
@@ -35,6 +35,7 @@ public:
         return _archetypes.register_component<C>();
     }
 
+    // Since components are relative to the world, I'd rather the componentID lives in the world.
     template<typename C>
     component_id get_component_id(){
         return archetype_manager::get_component_id<C>();
@@ -54,30 +55,32 @@ public:
             return *this;
         }
 
-        entity_id build() {
-            // Build the signature from the component ID's.
-            // Check if it exists, or we need a new archetype.
-            // Add the relevant components at the correct location in the archetype.
-            
-            // TODO: Move signature creation method from _componentData to archetypeManager, so that the signature creation logic is maintained by an archetype class.
+        // Should build/return an entity record.
+        entity_record build() {
+            archetype::signature sig = build_signature();
+            archetype& archetype = _world._archetypes.get_or_create_archetype(sig);
+
+            // Need to add each component to our archetype. 
+            for(auto [c_id, component] : _componentData){
+                archetype.insert_component(c_id, std::move(component));                
+            }
+
+            return {_id, 0}; // Global per world ID
+        }
+
+    private:
+        inline archetype::signature build_signature(){
             archetype::signature sig{};
+
             for(const auto& [comp_id, _] : _componentData){
                 sig.insert(comp_id);
             }
 
-            // Get or create the archetype (Archetype manager)
-            // Add the entity to it, and move all the components into the archetype.
-            // Create our entity record.
-            [[maybe_unused]] auto& archetype = _world._archetypes.get_or_create_archetype(sig);
-
-            // Now, create our entity, place its components in the archetype, and store it's record and data.
-
-            return _id;
+            return sig;
         }
 
-    private:
         [[maybe_unused]] world& _world;
-        entity_id _id;
+        entity_id _id; // Global, per world ID. Not position in archetype.
         std::unordered_map<component_id, std::any> _componentData;
 
     }; // END ENTITY BUILDER

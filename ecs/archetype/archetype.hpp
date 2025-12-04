@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <iostream>
+#include <cassert>
 #include <any>
 #include <memory>
 
@@ -107,10 +107,6 @@ public:
             return &_data[index];
         }
         
-        void push_back(C&& component) override {
-            _data.push_back(std::move(component));
-        }
-        
         void push_back(std::any&& component) override {
             _data.push_back(std::move(std::any_cast<C&>(component)));
         }
@@ -141,7 +137,24 @@ public:
         _signature.insert(id);
     }
 
-    signature& getSignature() {
+
+    void insert_component(component_id id, std::any&& component) {
+        auto it = _componentMap.find(id);
+        assert(it != _componentMap.end() && "Attempted to insert component in incompatible archetype");
+        
+        size_t array_index = it->second;
+        component_array_base* arr = _data[array_index].get();
+
+        // Automatically handles the type cast via push back
+        arr->push_back(std::move(component));
+    }
+    
+    // Remove the components for entity with at arch_idx (swap pop, update entity record.)
+    void delete_entity_components(const size_t arch_idx){
+        
+    }
+
+    const signature& getSignature() const {
         return _signature;
     }
 

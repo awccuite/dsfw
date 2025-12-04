@@ -33,6 +33,8 @@ public:
     }
 
     // Get or create an archetype based on the requested signature
+    // This method guarantees that the specified
+    // archetype (or signature return archetype) has the correct component storage.
     archetype& get_or_create_archetype(archetype::signature& signature){
         auto it = _archetypeMap.find(signature);
         if(it != _archetypeMap.end()){
@@ -74,7 +76,7 @@ private:
     std::unordered_map<component_id, component_factory> _componentFactories;
 
     static inline std::unordered_map<component_id, std::string> _componentNames;
-    static inline std::atomic<component_id> _idCounter;
+    static inline std::atomic<component_id> _idCounter; // Have id's be consistent per class across all potential instances
 };
 
 }; // namespace gxe
