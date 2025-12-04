@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/types.hpp"
+#include "types.hpp"
 #include "id_manager.hpp"
 
 #include "archetype/archetype_man.hpp"
