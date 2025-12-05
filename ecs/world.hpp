@@ -35,7 +35,6 @@ public:
         return _archetypes.register_component<C>();
     }
 
-    // Since components are relative to the world, I'd rather the componentID lives in the world.
     template<typename C>
     component_id get_component_id(){
         return archetype_manager::get_component_id<C>();
