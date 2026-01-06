@@ -24,8 +24,6 @@ entity_id id_manager::create_entity(){
     return id;
 }
 
-// We want Id's to be reused in the potential
-// case that we delete and spawn entities in vast quantities.
 void id_manager::destroy_entity(entity_id id){
     _availableIds.push_back(id);
     _numEntities--;

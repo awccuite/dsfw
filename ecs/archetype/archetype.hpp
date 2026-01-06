@@ -6,6 +6,7 @@
 #include <cassert>
 #include <any>
 #include <memory>
+#include <optional>
 
 #include "../types.hpp"
 
@@ -25,7 +26,8 @@ public:
     archetype() = default; // Empty archetype.
     ~archetype() = default;
 
-    // Wrapper around a dynamic bitset (currentl vector<bool>)
+    // Wrapper around a dynamic bitset (current vector<bool>).
+    // TODO: Consider update to boost dynamic bitset or similar.
     struct signature { // SIGNATURE.
     public:
         // Equality operator (not assignment operator)
@@ -42,6 +44,7 @@ public:
             for (component_id id : other._components) {
                 if (!contains(id)) return false;
             }
+
             return true;
         }
 
@@ -67,6 +70,7 @@ public:
         }
 
         // Hash impl for signature
+        // TODO: Rework this to either use an inline bitset or a vector<bool>.
         struct hash {
             size_t operator()(const signature& sig) const {
                 size_t hash_value = 0;
@@ -82,6 +86,7 @@ public:
     }; // SIGNATURE
 
     // Component arrays
+    // TODO: Manual mem offset without type concerns.
     struct component_array_base {
         virtual ~component_array_base() = default;
 
@@ -111,7 +116,9 @@ public:
             _data.push_back(std::move(std::any_cast<C&>(component)));
         }
         
-        // Swap and pop
+        // Swap and pop.
+        // This needs to somehow enable updating
+        // of the swapped entity record.
         void remove(size_t index) override {
             if (index < _data.size() - 1) {
                 std::swap(_data[index], _data.back());
@@ -137,7 +144,6 @@ public:
         _signature.insert(id);
     }
 
-
     void insert_component(component_id id, std::any&& component) {
         auto it = _componentMap.find(id);
         assert(it != _componentMap.end() && "Attempted to insert component in incompatible archetype");
@@ -150,8 +156,20 @@ public:
     }
     
     // Remove the components for entity with at arch_idx (swap pop, update entity record.)
-    void delete_entity_components(const size_t arch_idx){
-        
+    // Swap with the last entity in the list. Update records and the like.
+    std::optional<size_t> delete_entity_components(const size_t arch_index){
+        size_t last_index = _data.front()->size() - 1;
+
+        for (auto& dat : _data) {
+            assert(arch_index < dat->size());
+            dat->remove(arch_index);
+        }
+
+        if(arch_index == last_index){
+            return std::nullopt; // No update needed, we removed the last element.
+        }
+
+        return last_index;
     }
 
     const signature& getSignature() const {
@@ -159,7 +177,7 @@ public:
     }
 
 private:
-    std::unordered_map<component_id, size_t> _componentMap; // Map from componentid to their index in this specific archetype collection
+    std::unordered_map<component_id, size_t> _componentMap; // Map from component id to their index in this specific archetype collection
     std::vector<std::unique_ptr<component_array_base>> _data;
     signature _signature;
 };

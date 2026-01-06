@@ -56,14 +56,14 @@ protected:
 //       MyPhysicsSystem(ECSType& ecs) : SystemCRTP(60, ecs) {}
 //       void tick(float dt) { /* custom logic using _ecs */ }
 //   };
-template <typename Derived, typename ECS>
+template <typename Derived, typename world>
 class SystemCRTP : public system_base {
 public:
-    SystemCRTP(ECS& world, uint32_t tickrate = 0) // Default of update as frequently as possible
-        : system_base(tickrate), _world(world) {}
+    SystemCRTP(world& w, uint32_t tickrate = 0) // Default of update as frequently as possible
+        : system_base(tickrate), _world(w) {}
 
 protected:
-    ECS& _world; // Reference to the world with which this system operates in
+    world& _world; // Reference to the world with which this system operates in
 };
 
 // Lambda-based system for quick inline definitions (original behavior)

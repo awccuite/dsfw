@@ -35,9 +35,9 @@ public:
     // Get or create an archetype based on the requested signature
     // This method guarantees that the specified
     // archetype (or signature return archetype) has the correct component storage.
-    archetype& get_or_create_archetype(archetype::signature& signature){
+    archetype& get_or_create_archetype(const archetype::signature& signature){
         auto it = _archetypeMap.find(signature);
-        if(it != _archetypeMap.end()){
+        if(it != _archetypeMap.end()){ // If archetype exists, return a reference to the archetype.
             return *(_archetypes[it->second]._data);
         }
 
@@ -45,9 +45,9 @@ public:
     }
 
 private:
-    archetype& create_archetype(archetype::signature& signature){
+    archetype& create_archetype(const archetype::signature& signature){
         archetype_wrapper wrapper;
-        wrapper._signature = signature;
+        wrapper._signature = signature; // Copy construct the signature
         wrapper._data = std::make_unique<archetype>();
 
         for(const component_id& id : signature.components()){
@@ -58,7 +58,7 @@ private:
             wrapper._data->insert_component_array(id, it->second());
         }
         
-        size_t index = _archetypes.size();
+        const size_t index = _archetypes.size();
         _archetypes.push_back(std::move(wrapper));
         _archetypeMap[signature] = index;
         
@@ -67,10 +67,13 @@ private:
 
     struct archetype_wrapper {
         archetype::signature _signature;
-        std::unique_ptr<archetype> _data;
+
+        // This should provide stability to the location of an actual archetype in memory, eg, we can cache a reference
+        // to the underlying data as a potential optimization.
+        std::unique_ptr<archetype> _data; 
     };
 
-    // We intentially store duplicates of the signatures, as the map provides O(1) specific archetype lookup, and the vector provides efficient iteration over signatures.
+    // We intentionally store duplicates of the signatures, as the map provides O(1) specific archetype lookup, and the vector provides efficient iteration over signatures.
     std::vector<archetype_wrapper> _archetypes; // Archetype container. Useful for queries like "forEachWith<Components...>()". We can always cache queries as well
     std::unordered_map<archetype::signature, size_t, archetype::signature::hash> _archetypeMap; // Map each archetype signature to its index in _archetypes.
     std::unordered_map<component_id, component_factory> _componentFactories;

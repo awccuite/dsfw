@@ -1,6 +1,8 @@
 build/
+cmake-build-debug/
 .cache/
 .vscode/
+.idea/
 .DS_Store
 *.log
 *.tmp
