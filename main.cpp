@@ -45,6 +45,7 @@ int main(){
     EndTextureMode();
 
     gxe::world world1;
+    
     world1.register_component<position>();
     world1.register_component<velocity>();
 
