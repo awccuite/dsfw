@@ -1,32 +1,17 @@
 #include <iostream>
-#include <raylib.h>
+#include <array>
+#include <chrono>
 
-#include "ecs/world.hpp"
+#include "src/rendering/draw_system.hpp"
 
-[[maybe_unused]] const int SCREEN_WIDTH = 1200;
-[[maybe_unused]] const int SCREEN_HEIGHT = 800;
+const int SCREEN_WIDTH = 1200;
+const int SCREEN_HEIGHT = 800;
 
 constexpr size_t COLOR_COUNT = 21;
-[[maybe_unused]] constexpr std::array<Color, COLOR_COUNT> colors{
+constexpr std::array<Color, COLOR_COUNT> colors{
     DARKGRAY, MAROON, ORANGE, DARKGREEN, DARKBLUE, DARKPURPLE, DARKBROWN,
     GRAY, RED, GOLD, LIME, BLUE, VIOLET, BROWN, LIGHTGRAY, PINK, YELLOW,
     GREEN, SKYBLUE, PURPLE, BEIGE
-};
-
-void init_raylib() {
-    SetConfigFlags(FLAG_WINDOW_TOPMOST | FLAG_WINDOW_UNDECORATED);
-    InitWindow(GetScreenWidth(), GetScreenWidth(), "CPU Render");
-    SetTargetFPS(999);
-}
-
-struct position {
-    float x{0};
-    float y{0};
-};
-
-struct velocity {
-    float vx{0};
-    float vy{0};
 };
 
 int main(){
@@ -36,33 +21,37 @@ int main(){
     gxe::debug::run_ecs_tests();
 #endif
 
-    init_raylib();
-
-    // Lets try creating entites with a position in the world, based on mouse position.
-    RenderTexture circleTex = LoadRenderTexture(6, 6);
-    BeginTextureMode(circleTex);
-        DrawCircle(3, 3, 3.0f, WHITE);
-    EndTextureMode();
-
     gxe::world world1;
-    
-    world1.register_component<position>();
-    world1.register_component<velocity>();
 
-    while(!WindowShouldClose()){
-        BeginDrawing();
-        ClearBackground(WHITE);
+    auto& particles = world1.register_system<phys::particle_system>(
+        phys::fixed::from_int(SCREEN_WIDTH),
+        phys::fixed::from_int(SCREEN_HEIGHT),
+        static_cast<uint32_t>(COLOR_COUNT));
+
+    // Constructing this opens the window, so nothing raylib may run before it.
+    auto& renderer = world1.register_system<render::draw_system>(
+        SCREEN_WIDTH, SCREEN_HEIGHT, colors);
+
+    auto last = std::chrono::steady_clock::now();
+
+    while(!renderer.should_close()){
+        const auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - last);
+        last = now;
+
+        // Admit at most 250ms of wall time per frame so a long stall cannot cascade
+        // into a tick backlog that takes longer to run than the time it represents.
+        if(elapsed > std::chrono::milliseconds(250)) elapsed = std::chrono::milliseconds(250);
 
         if(IsMouseButtonDown(MOUSE_LEFT_BUTTON)){
             Vector2 mPos = GetMousePosition();
 
-            std::cout << "Created: " << world1.create_entity().add_component<position>(mPos.x, mPos.y).build() << " at " << mPos.x << ", " << mPos.y << "\n";
+            particles.spawn(world1,
+                            phys::fixed::from_float(mPos.x),
+                            phys::fixed::from_float(mPos.y));
         }
 
-        // Now, draw a circle at each position entity
-        
-
-        EndDrawing();
+        world1.step(elapsed);
     }
 
     return 0;

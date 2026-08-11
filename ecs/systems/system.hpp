@@ -1,98 +1,80 @@
 #pragma once
 
-#include <functional>
-#include <optional>
-#include <iostream>
-
-// Systems can be created to update at some frequency T,
-// or triggered manually.
-
-// Systems should be templated over the components they access, and should maintain
-// a pointer to the ECS.
-
-// Systems should be archetype agnostic, instead utilizing components.
-// Base class handling tick rate and time accumulation
+#include <chrono>
+#include <cstdint>
 
 namespace gxe {
 
+class world;
+
+} // namespace gxe
+
+namespace gxe::systems {
+
+enum class UPDATE_TYPE {
+    FIXED,    // hz is a target: runs every owed tick, so sim time keeps up with wall time
+    CAPPED,   // hz is a ceiling: at most one tick per advance call
+    UNCAPPED, // exactly one tick per advance call; hz is ignored
+};
+
+// Type-erased handle so world can hold systems of differing update types.
 class system_base {
 public:
-    system_base(uint32_t tickrate):
-        _tickrate(tickrate),
-        _accumulatedTime(0.0f),
-        _secsPerTick(tickrate > 0 ? 1.0f / tickrate : 0.0f) {};
+    // hz 0 means uncapped and resolves to k_max_hz, as does any rate above it.
+    static constexpr uint32_t k_max_hz = 999;
 
     virtual ~system_base() = default;
 
-    // Virtual update for polymorphic calls through base pointer
-    void update(float dt) {
-        if (_tickrate == 0) {
-            tick(dt);
-            return;
-        }
+    virtual void advance(world& w, std::chrono::nanoseconds elapsed) = 0;
+    virtual void tick(world& w) = 0;
 
-        _accumulatedTime += dt;
+    // Called by world::register_system. Systems declare the components they need
+    // rather than the caller registering them beforehand.
+    virtual void register_components(world&) {}
 
-        while (_accumulatedTime >= _secsPerTick) {
-            tick(_secsPerTick);
-            _accumulatedTime -= _secsPerTick;
-        }
-    }
-
-    uint32_t tickrate() const { return _tickrate; }
+    uint32_t hz() const { return _hz; }
 
 protected:
-    virtual void tick(float dt) = 0;
+    explicit system_base(uint32_t hz)
+        : _hz((hz == 0 || hz > k_max_hz) ? k_max_hz : hz) {}
 
-    const uint32_t _tickrate;
-    float _accumulatedTime;
-    float _secsPerTick;
+    static constexpr int64_t k_nano = 1'000'000'000;
+
+    uint32_t _hz;
+    int64_t  _accumulated{0};
 };
 
-// CRTP base for custom systems - derive from this to create your own system types
-// Usage:
-//   class MyPhysicsSystem : public SystemCRTP<MyPhysicsSystem, ECSType> {
-//   public:
-//       MyPhysicsSystem(ECSType& ecs) : SystemCRTP(60, ecs) {}
-//       void tick(float dt) { /* custom logic using _ecs */ }
-//   };
-template <typename Derived, typename world>
-class SystemCRTP : public system_base {
+// Systems derive from this (or from component_system, which derives from it) and
+// implement tick. The update type is part of the type, so advance specializes on it
+// with no runtime state or branching.
+template<UPDATE_TYPE Type>
+class system : public system_base {
 public:
-    SystemCRTP(world& w, uint32_t tickrate = 0) // Default of update as frequently as possible
-        : system_base(tickrate), _world(w) {}
+    static constexpr UPDATE_TYPE k_update_type = Type;
 
-protected:
-    world& _world; // Reference to the world with which this system operates in
-};
+    using system_base::system_base;
 
-// Lambda-based system for quick inline definitions (original behavior)
-class LambdaSystem : public system_base {
-public:
-    LambdaSystem(uint32_t tickrate) : system_base(tickrate) {};
-    ~LambdaSystem() = default;
+    void advance(world& w, std::chrono::nanoseconds elapsed) final {
+        if constexpr (Type == UPDATE_TYPE::UNCAPPED) {
+            tick(w);
+        } else {
+            // Scaling nanoseconds by hz keeps the tick count exact and independent of
+            // how the elapsed time was split into frames.
+            _accumulated += elapsed.count() * static_cast<int64_t>(_hz);
 
-    // Set tick to some function F.
-    template<typename F>
-    void tickDef(F&& lambda){ 
-        _tickImpl = [lambda = std::forward<F>(lambda)](float dt) mutable {
-            if constexpr (std::is_invocable_v<F, float>) {
-                lambda(dt);
+            if constexpr (Type == UPDATE_TYPE::CAPPED) {
+                if (_accumulated >= k_nano) {
+                    _accumulated = 0; // drop the remainder; a ceiling must not build a backlog
+                    tick(w);
+                }
             } else {
-                lambda();
+                while (_accumulated >= k_nano) {
+                    _accumulated -= k_nano;
+                    tick(w);
+                }
             }
-        };
-    }
-
-protected:
-    void tick(float sysDelta) override {
-        if(_tickImpl){
-            (*_tickImpl)(sysDelta);
         }
     }
-
-private:
-    std::optional<std::function<void(float)>> _tickImpl;
 };
 
-}; // Namespace gxe
+} // namespace gxe::systems

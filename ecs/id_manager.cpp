@@ -17,7 +17,9 @@ entity_id id_manager::create_entity(){
     _availableIds.pop_back();
 
     if(_availableIds.empty()){
-        allocate_entities(id);
+        // Refill starting AFTER the id just handed out - starting at `id` would reissue it,
+        // producing two live entities sharing one id every INITIAL_ENTITY_LIMIT spawns.
+        allocate_entities(id + 1);
     }
 
     _numEntities++;

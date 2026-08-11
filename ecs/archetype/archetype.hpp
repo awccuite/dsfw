@@ -7,6 +7,8 @@
 #include <any>
 #include <memory>
 #include <optional>
+#include <span>
+#include <type_traits>
 
 #include "../types.hpp"
 
@@ -158,7 +160,10 @@ public:
     // Remove the components for entity with at arch_idx (swap pop, update entity record.)
     // Swap with the last entity in the list. Update records and the like.
     std::optional<size_t> delete_entity_components(const size_t arch_index){
-        size_t last_index = _data.front()->size() - 1;
+        const size_t rows = size(); // size() guards the component-less archetype case.
+        if(rows == 0) return std::nullopt;
+
+        const size_t last_index = rows - 1;
 
         for (auto& dat : _data) {
             assert(arch_index < dat->size());
@@ -174,6 +179,39 @@ public:
 
     const signature& getSignature() const {
         return _signature;
+    }
+
+    // Number of entities stored in this archetype (all component arrays are kept in lockstep).
+    size_t size() const {
+        return _data.empty() ? 0 : _data.front()->size();
+    }
+
+    // Typed access to a whole column. There is deliberately no component_id parameter:
+    // C alone determines the column, so a type/id mismatch is unrepresentable.
+    // 
+    // I love you Aidan <3 / I LOVE YOU TOO LUBBINGON BIGAMUS
+    //
+    // The static_cast is provably correct rather than merely assumed - register_component<C>()
+    // installs the factory producing component_array<C> under get_component_id<C>(), and
+    // get_component_id is a per-type static counter, so the id fully determines the stored type.
+    // No RTTI, no runtime check.
+    template<typename C>
+    component_array<C>& array_for() {
+        auto it = _componentMap.find(get_component_id<C>());
+        assert(it != _componentMap.end() && "Component not present in this archetype");
+        return *static_cast<component_array<C>*>(_data[it->second].get());
+    }
+
+    // Contiguous view over one column. Resolve ONCE per archetype, then index it per row.
+    template<typename C>
+    std::span<C> column() {
+        return std::span<C>(array_for<C>()._data);
+    }
+
+    // Append one component to its column. Callers must keep every column in lockstep.
+    template<typename C>
+    void push_component(C&& value) {
+        array_for<std::remove_cvref_t<C>>()._data.push_back(std::forward<C>(value));
     }
 
 private:
