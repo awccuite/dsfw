@@ -12,10 +12,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Debug build option
 option(BUILD_DEBUG "Enable debug tests and utilities" OFF)
 
+# The ECS is header-only; main.cpp is the only translation unit.
 set(SOURCE_FILES
     main.cpp
-
-    ecs/id_manager.cpp
 )
 
 find_package(raylib REQUIRED)

@@ -69,6 +69,7 @@ public:
         EndDrawing();
     }
 
+    // Update is run for_each_entity_with in the archetype.
     void update(phys::position& p, phys::color_index& idx) {
         DrawTextureRec(_texture.texture, _source,
                        Vector2{p.x.to_float() - _halfWidth, p.y.to_float() - _halfHeight},
