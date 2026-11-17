@@ -14,30 +14,17 @@
 
 namespace gxe {
 
-// An archetype is a collection of components, that are related in that each of the
-// entities that own one component in the archetype own one of every
-// component in the archetype.
-
-// Each archetype maintains a vector for each of its underlying components.
-
-// Each archetype has a signature. Entities themselves to not maintain a signature,
-// any time an entity needs to use a signature, it should be provided by the archetype.
-
 class archetype {
 public:
     archetype() = default; // Empty archetype.
     ~archetype() = default;
 
-    // Wrapper around a dynamic bitset (current vector<bool>).
-    // TODO: Consider update to boost dynamic bitset or similar.
     struct signature { // SIGNATURE.
     public:
-        // Equality operator (not assignment operator)
         bool operator==(const signature& other) const {
             return _components == other._components;
         }
 
-        // Check if the archetype contains the component ID.
         bool contains(const component_id id) const {
             return _components.find(id) != _components.end();
         }
@@ -58,7 +45,6 @@ public:
             _components.erase(id);
         }
 
-        // Expose data for hashing
         const std::unordered_set<component_id>& data() const {
             return _components;
         }
@@ -87,7 +73,6 @@ public:
         std::unordered_set<component_id> _components;
     }; // SIGNATURE
 
-    // Component arrays
     // TODO: Manual mem offset without type concerns.
     struct component_array_base {
         virtual ~component_array_base() = default;
@@ -139,7 +124,6 @@ public:
     // End component arrays
 
     void insert_component_array(const component_id id, std::unique_ptr<component_array_base> array){
-        // Move a component array into our component map and _data
         size_t index = _data.size();
         _data.push_back(std::move(array));
         _componentMap[id] = index;
@@ -153,12 +137,10 @@ public:
         size_t array_index = it->second;
         component_array_base* arr = _data[array_index].get();
 
-        // Automatically handles the type cast via push back
         arr->push_back(std::move(component));
     }
     
-    // Remove the components for entity with at arch_idx (swap pop, update entity record.)
-    // Swap with the last entity in the list. Update records and the like.
+    // TODO: Use flat struct
     std::optional<size_t> delete_entity_components(const size_t arch_index){
         const size_t rows = size(); // size() guards the component-less archetype case.
         if(rows == 0) return std::nullopt;
@@ -190,11 +172,6 @@ public:
     // C alone determines the column, so a type/id mismatch is unrepresentable.
     // 
     // I love you Aidan <3 / I LOVE YOU TOO LUBBINGON BIGAMUS
-    //
-    // The static_cast is provably correct rather than merely assumed - register_component<C>()
-    // installs the factory producing component_array<C> under get_component_id<C>(), and
-    // get_component_id is a per-type static counter, so the id fully determines the stored type.
-    // No RTTI, no runtime check.
     template<typename C>
     component_array<C>& array_for() {
         auto it = _componentMap.find(get_component_id<C>());
@@ -202,13 +179,11 @@ public:
         return *static_cast<component_array<C>*>(_data[it->second].get());
     }
 
-    // Contiguous view over one column. Resolve ONCE per archetype, then index it per row.
     template<typename C>
     std::span<C> column() {
         return std::span<C>(array_for<C>()._data);
     }
 
-    // Append one component to its column. Callers must keep every column in lockstep.
     template<typename C>
     void push_component(C&& value) {
         array_for<std::remove_cvref_t<C>>()._data.push_back(std::forward<C>(value));

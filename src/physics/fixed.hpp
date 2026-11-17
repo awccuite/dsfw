@@ -10,9 +10,6 @@
 // int64 raw with 20 fractional bits:
 //   range     +/- 2^43  = +/- 8,796,093,022,208 world units
 //   precision   1/2^20  = 0.00000095 world units
-//
-// Quantization error is identical on every machine, so it costs fidelity but never
-// determinism.
 
 namespace phys {
 

@@ -171,12 +171,10 @@ public:
         return ref;
     }
 
-    // Wall-clock driven: runs each system's pending ticks in registration order.
     void step(std::chrono::nanoseconds elapsed) {
         for (auto& sys : _systems) sys->advance(*this, elapsed);
     }
 
-    // One tick of every system, no clock involved.
     void tick() {
         for (auto& sys : _systems) sys->tick(*this);
     }
