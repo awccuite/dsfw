@@ -127,6 +127,7 @@ private:
     }
 
     size_t create_archetype(const archetype::signature& signature){
+        assert(signature.size() > 0 && "an entity needs at least one component");
         archetype_wrapper wrapper;
         wrapper._signature = signature; // Copy construct the signature
         wrapper._data = std::make_unique<archetype>();

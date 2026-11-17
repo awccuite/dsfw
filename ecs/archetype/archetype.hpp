@@ -63,7 +63,10 @@ public:
             size_t operator()(const signature& sig) const {
                 size_t hash_value = 0;
                 for (component_id id : sig._components) {
-                    hash_value ^= std::hash<component_id>{}(id) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
+                    uint64_t x = id + 0x9e3779b97f4a7c15ull;            // splitmix64 finalizer
+                    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+                    x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+                    hash_value += static_cast<size_t>(x ^ (x >> 31));   // + doesn't care about order
                 }
                 return hash_value;
             }

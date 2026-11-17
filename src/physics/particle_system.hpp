@@ -1,5 +1,5 @@
 #pragma once
-
+\
 #include "src/physics/fixed.hpp"
 #include "ecs/systems/component_system.hpp"
 
@@ -36,7 +36,7 @@ class particle_system
                                             gxe::systems::UPDATE_TYPE::FIXED,
                                             position, velocity, hitbox2d> {
 public:
-    static constexpr uint32_t k_hz = 60;
+    static constexpr uint32_t k_hz = 240;
 
     static constexpr int32_t k_speed_min_per_sec  = 60;
     static constexpr int32_t k_speed_max_per_sec  = 600;

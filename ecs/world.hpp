@@ -69,6 +69,7 @@ public:
 
         // Should build/return an entity record.
         entity_record build() {
+            assert(_world._iterating == 0 && "no spawn/delete inside for_each");
             const archetype::signature sig = build_signature();
             const size_t a_idx = _world._archetypes.get_or_create_archetype_index(sig);
             archetype& arch = _world._archetypes.archetype_at(a_idx);
@@ -107,6 +108,7 @@ public:
     // no per-entity std::any map and no signature copy. This is the hot path.
     template <typename ...Components>
     entity_id spawn_entity(Components&&... components) {
+        assert(_iterating == 0 && "no spawn/delete inside for_each");
         const archetype::signature& sig =
             archetype_manager::signature_for<std::remove_cvref_t<Components>...>();
 
@@ -120,6 +122,7 @@ public:
     }
 
     void delete_entity(entity_id id) {
+        assert(_iterating == 0 && "no spawn/delete inside for_each");
         auto it = _entityRecords.find(id);
         if (it == _entityRecords.end()) return;
 
@@ -152,7 +155,10 @@ public:
     // Invokes f(Components&...) for every entity that has all of Components.
     template<typename ...Components, typename F>
     void for_each_with_components(F&& f){
+        // Side effects in assert are intentional: the counter only exists in debug builds.
+        assert(++_iterating > 0);
         _archetypes.for_each_with_components<Components...>(std::forward<F>(f));
+        assert(--_iterating >= 0);
     }
 
     // TODO: Replace the flat registration-ordered list with a DAG of system dependencies.
@@ -209,6 +215,8 @@ private:
     // during deletion. Indexed by archetype index rather than keyed by signature, which
     // removes a signature hash+compare from every spawn and every delete.
     std::vector<std::vector<entity_id>> _archetypeEntities;
+
+    int _iterating = 0; // > 0 while a for_each is running; spawn/delete must not happen then
 };
 
 #ifdef BUILD_DEBUG

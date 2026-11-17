@@ -25,4 +25,6 @@ target_link_libraries(ds_ecs raylib)
 
 if(BUILD_DEBUG)
     target_compile_definitions(ds_ecs PRIVATE BUILD_DEBUG)
+else()
+    target_compile_definitions(ds_ecs PRIVATE NDEBUG)
 endif()
